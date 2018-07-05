@@ -1,0 +1,29 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio 15
+VisualStudioVersion = 15.0.26730.16
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{F184B08F-C81C-45F6-A57F-5ABD9991F28F}") = "PawnedChecker", "PawnedChecker\PawnedChecker.vbproj", "{09EFB76C-68EF-4EEE-8DCD-D0D8F5CB131E}"
+EndProject
+Project("{54435603-DBB4-11D2-8724-00A0C9A8B90C}") = "PawnedCheckerInstaller", "PawnedCheckerInstaller\PawnedCheckerInstaller.vdproj", "{9404E39B-5D54-4446-8313-549E4AD6AA41}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{09EFB76C-68EF-4EEE-8DCD-D0D8F5CB131E}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{09EFB76C-68EF-4EEE-8DCD-D0D8F5CB131E}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{09EFB76C-68EF-4EEE-8DCD-D0D8F5CB131E}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{09EFB76C-68EF-4EEE-8DCD-D0D8F5CB131E}.Release|Any CPU.Build.0 = Release|Any CPU
+		{9404E39B-5D54-4446-8313-549E4AD6AA41}.Debug|Any CPU.ActiveCfg = Debug
+		{9404E39B-5D54-4446-8313-549E4AD6AA41}.Release|Any CPU.ActiveCfg = Release
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {496924B4-0249-4E67-B747-4697DC1BBFB4}
+	EndGlobalSection
+EndGlobal
