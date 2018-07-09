@@ -5,10 +5,18 @@ Imports System.Net.Http
 
 Public Class fPPChecker
 
+    Enum MethodToUse
+        WebClient = 0
+        HttpClient = 1
+    End Enum
+
+
+
 #Region "Events"
     Private Sub fPPChecker_Load(sender As Object, e As EventArgs) Handles MyBase.Load
         lStatus.Text = "fPPChecker_Load"
         Try
+
             ReadConfig()
             Initialise()
 
@@ -17,7 +25,6 @@ Public Class fPPChecker
         End Try
 
     End Sub
-
 
     Private Sub bSelect_Click(sender As Object, e As EventArgs) Handles bSelect.Click
         lStatus.Text = "bSelect_Click"
@@ -34,6 +41,11 @@ Public Class fPPChecker
         lStatus.Text = "bLoad_Click"
         Try
             If Not String.IsNullOrEmpty(tbFile.Text) Then
+
+                If clbPasswordsToCheck.DataSource IsNot Nothing Then
+                    clbPasswordsToCheck.DataSource = Nothing
+                End If
+
                 Dim dataSource = File.ReadAllLines(tbFile.Text).Distinct().ToList()
 
                 clbPasswordsToCheck.DataSource = dataSource
@@ -76,22 +88,29 @@ Public Class fPPChecker
                 For counter As Integer = 0 To clbPasswordsToCheck.Items.Count - 1
                     If Not clbPasswordsToCheck.GetItemChecked(counter) Then
 
+                        clbPasswordsToCheck.SetSelected(counter, True)
+
                         Dim passwordToCheck = clbPasswordsToCheck.Items(counter).ToString()
 
                         'check if password is pawned
                         If Not String.IsNullOrEmpty(passwordToCheck) Then
-                            If IsPasswordPawned(passwordToCheck) Then
+                            If IsPasswordPawned(passwordToCheck, MethodToUse.WebClient) Then
                                 clbPasswordsToCheck.SetItemCheckState(counter, CheckState.Checked)
                             End If
                         End If
 
                     End If
+
+                    If Not bStop.Enabled Then
+                        Exit For
+                    End If
+
                 Next
 
                 bStop.Enabled = False
             End If
 
-            'lStatus.Text = "Done"
+            lStatus.Text = "Done"
         Catch ex As Exception
             lStatus.Text = String.Format("bVerify_Click Error: {0}", ex.Message)
         End Try
@@ -105,18 +124,26 @@ Public Class fPPChecker
                 bStop.Enabled = True
 
                 For counter As Integer = 0 To clbPasswordsToCheck.Items.Count - 1
+
                     If Not clbPasswordsToCheck.GetItemChecked(counter) Then
+
+                        clbPasswordsToCheck.SetSelected(counter, True)
 
                         Dim passwordToCheck = clbPasswordsToCheck.Items(counter).ToString()
 
                         'check if password is pawned
                         If Not String.IsNullOrEmpty(passwordToCheck) Then
-                            If IsPasswordPawnedV2(passwordToCheck) Then
+                            If IsPasswordPawned(passwordToCheck, MethodToUse.HttpClient) Then
                                 clbPasswordsToCheck.SetItemCheckState(counter, CheckState.Checked)
                             End If
                         End If
 
                     End If
+
+                    If Not bStop.Enabled Then
+                        Exit For
+                    End If
+
                 Next
 
                 bStop.Enabled = False
@@ -193,115 +220,101 @@ Public Class fPPChecker
         Next
     End Sub
 
-    Private Function IsPasswordPawned(passwordToCheck As String) As Boolean
+    Private Function IsPasswordPawned(passwordToCheck As String, methodToUse As MethodToUse) As Boolean
         lStatus.Text = "IsPasswordPawned"
 
         Dim bPawned As Boolean = False
 
         Try
 
+            lPassword.Text = passwordToCheck
 
+            'sha hash
             Dim sha1 = getSHA1Hash(passwordToCheck)
+
+            lPasswordHash.Text = sha1
 
             'get first 5
             Dim hash5 = Mid(sha1, 1, 5)
 
             'form webapi
-            Dim webAPI = tbWebApi.Text.Replace("{0}", hash5)
+            tbURI.Text = tbWebApi.Text.Replace("{0}", hash5)
 
-            'get list of pawned password from httpclient
-            'Using client As New WebClient()
+            'response data
+            Dim apiResponseData As String = String.Empty
 
-            'webclient with timeout....
-            Using client As New WebClientWithTimeout(New TimeSpan(Integer.Parse(clbPasswordsToCheck.Tag.ToString())))
+            'timespan
+            Dim timeSpan = New TimeSpan(Integer.Parse(clbPasswordsToCheck.Tag.ToString()))
 
-                lStatus.Text = "WebClient_DownloadString"
+            If methodToUse = MethodToUse.WebClient Then
 
-                Dim apiData As String = client.DownloadString(webAPI)
+                'webclient with timeout....
+                Using client As New WebClientWithTimeout(timeSpan)
+                    apiResponseData = client.DownloadString(tbURI.Text)
+                End Using
 
-                Dim parts As List(Of String) = apiData.Split(New String() {Environment.NewLine}, StringSplitOptions.None).ToList()
+            End If
 
-                For Each part As String In parts
-                    Application.DoEvents()
+            If methodToUse = MethodToUse.HttpClient Then
 
-                    Dim partSplit = part.Split(New Char() {":"c})
+                'httpclient
+                Using httpClient = New HttpClient()
+                    httpClient.DefaultRequestHeaders.Add("User-Agent", "Mozilla/5.0 (Windows NT 6.1; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/58.0.3029.110 Safari/537.36")
+                    httpClient.Timeout = timeSpan
+                    apiResponseData = httpClient.GetStringAsync(New Uri(tbURI.Text)).Result
+                End Using
 
-                    Dim partSplitHash5 = String.Format("{0}{1}", hash5, partSplit(0))
-                    Dim partSplitHash5Count = partSplit(1)
+            End If
 
-                    lStatus.Text = partSplitHash5
-                    If partSplitHash5.ToLower() = sha1.ToLower() Then
-                        bPawned = True
-                        Exit For
-                    End If
-
-                    If Not bStop.Enabled Then
-                        Exit For
-                    End If
-
-                Next
-
-            End Using
-
-
-        Catch ex As Exception
-            lStatus.Text = String.Format("IsPasswordPawned Error: {0}", ex.Message)
-        End Try
-
-        Return bPawned
-
-    End Function
-
-    Private Function IsPasswordPawnedV2(passwordToCheck As String) As Boolean
-        lStatus.Text = "IsPasswordPawnedV2"
-
-        Dim bPawned As Boolean = False
-
-        Try
-
-            Dim sha1 = getSHA1Hash(passwordToCheck)
-
-            'get first 5
-            Dim hash5 = Mid(sha1, 1, 5)
-
-            'form webapi
-            Dim uri = tbWebApi.Text.Replace("{0}", hash5)
-
-            Dim httpClient = New HttpClient()
-
-            httpClient.DefaultRequestHeaders.Add("User-Agent", "Mozilla/5.0 (Windows NT 6.1; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/58.0.3029.110 Safari/537.36")
-
-            Dim response = httpClient.GetStringAsync(New Uri(uri)).Result
-
-            Dim parts As List(Of String) = response.Split(New String() {Environment.NewLine}, StringSplitOptions.None).ToList()
-
-            For Each part As String In parts
-                Application.DoEvents()
-
-                Dim partSplit = part.Split(New Char() {":"c})
-
-                Dim partSplitHash5 = String.Format("{0}{1}", hash5, partSplit(0))
-                Dim partSplitHash5Count = partSplit(1)
-
-                lStatus.Text = partSplitHash5
-                If partSplitHash5.ToLower() = sha1.ToLower() Then
-                    bPawned = True
-                    Exit For
-                End If
-
-                If Not bStop.Enabled Then
-                    Exit For
-                End If
-
-            Next
-
-            httpClient.Dispose()
+            If Not String.IsNullOrEmpty(apiResponseData) Then
+                bPawned = LoopAndCheckIsPasswordPawned(apiResponseData, sha1, hash5)
+            End If
 
         Catch ex As Exception
             lStatus.Text = String.Format("IsPasswordPawnedV2 Error: {0}", ex.Message)
         End Try
 
         Return bPawned
+    End Function
+
+    Private Function LoopAndCheckIsPasswordPawned(apiResponseData As String, sha1 As String, hash5 As String) As Boolean
+
+        Dim bPawned = False
+
+        Dim data As List(Of String) = apiResponseData.Split(New String() {Environment.NewLine}, StringSplitOptions.None).ToList()
+
+        lDataCount.Text = data.Count.ToString()
+
+        lbResponse.DataSource = data
+
+
+        For counter As Integer = 0 To lbResponse.Items.Count - 1
+            Application.DoEvents()
+
+            lbResponse.SetSelected(counter, True)
+            'clbResponse.TopIndex = counter
+
+            Dim partSplit = lbResponse.Items(counter).ToString.Split(New Char() {":"c})
+
+            Dim partSplitHash5 = String.Format("{0}{1}", hash5, partSplit(0))
+            Dim partSplitHash5Count = partSplit(1)
+
+            If partSplitHash5.ToLower() = sha1.ToLower() Then
+                bPawned = True
+                Exit For
+            End If
+
+            If Not bStop.Enabled Then
+                Exit For
+            End If
+
+        Next
+
+        lbResponse.DataSource = Nothing
+        lDataCount.Text = "0"
+
+        Return bPawned
+
     End Function
 
     Function getSHA1Hash(ByVal strToHash As String) As String

@@ -14,6 +14,7 @@ C:\Users\Ash\source\repos\PawnedPasswordChecker\PawnedChecker\bin\Release\Pawned
 C:\Users\Ash\source\repos\PawnedPasswordChecker\PawnedChecker\bin\Release\PawnedChecker.exe
 C:\Users\Ash\source\repos\PawnedPasswordChecker\PawnedChecker\bin\Release\PawnedChecker.pdb
 C:\Users\Ash\source\repos\PawnedPasswordChecker\PawnedChecker\bin\Release\PawnedChecker.xml
+C:\Users\Ash\source\repos\PawnedPasswordChecker\PawnedChecker\obj\Release\PawnedChecker.vbprojAssemblyReference.cache
 C:\Users\Ash\source\repos\PawnedPasswordChecker\PawnedChecker\obj\Release\PawnedChecker.fPPChecker.resources
 C:\Users\Ash\source\repos\PawnedPasswordChecker\PawnedChecker\obj\Release\PawnedChecker.Resources.resources
 C:\Users\Ash\source\repos\PawnedPasswordChecker\PawnedChecker\obj\Release\PawnedChecker.vbproj.GenerateResource.cache
